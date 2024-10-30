@@ -94,7 +94,8 @@
 ## 测试productdemoaop服务
 
 ### 安装配置Jmeter
-从[https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.6.3.zip](https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.6.3.zip)下载Jmeter
+安装Jmeter需要先安装jdk17
+<br>从[https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.6.3.zip](https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.6.3.zip)下载Jmeter
 <br>`wget https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.6.3.zip`
 <br>`unzip apache-jmeter-5.6.3.zip`将压缩文件解压
 <br>由于服务器内存只有1G，需要修改jmeter的配置，才能将jmeter运行起来。在jmeter的bin目录下新建setenv.sh配置文件，在文件中增加以下内容
