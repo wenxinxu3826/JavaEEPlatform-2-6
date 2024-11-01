@@ -1,12 +1,13 @@
 package cn.edu.xmu.javaee.productdemoaop.mapper.generator;
 
 import cn.edu.xmu.javaee.productdemoaop.mapper.generator.po.ProductPo;
+import cn.edu.xmu.javaee.productdemoaop.mapper.generator.po.ProductPoExample;
 import cn.edu.xmu.javaee.productdemoaop.mapper.generator.po.ProductPoExample.Criteria;
 import cn.edu.xmu.javaee.productdemoaop.mapper.generator.po.ProductPoExample.Criterion;
-import cn.edu.xmu.javaee.productdemoaop.mapper.generator.po.ProductPoExample;
+import org.apache.ibatis.jdbc.SQL;
+
 import java.util.List;
 import java.util.Map;
-import org.apache.ibatis.jdbc.SQL;
 
 public class ProductPoSqlProvider {
     /**

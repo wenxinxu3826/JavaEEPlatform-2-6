@@ -10,6 +10,7 @@
         <option value="$PROJECT_DIR$/11.RocketMQ/RocketMQDemo/pom.xml" />
         <option value="$PROJECT_DIR$/11.RocketMQ/RocketMQReceiver/pom.xml" />
         <option value="$PROJECT_DIR$/11.RocketMQ/RocketMQSender/pom.xml" />
+        <option value="$PROJECT_DIR$/2.Preliminary/Servlet_Maven/pom.xml" />
       </list>
     </option>
   </component>

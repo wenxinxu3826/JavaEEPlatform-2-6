@@ -94,4 +94,7 @@ public class ProductService {
         return productDao.findProductByName_manual(name);
     }
 
+    public List<Product> getProductByName_join(String name) {
+        return productDao.findProductByName_join(name);
+    }
 }

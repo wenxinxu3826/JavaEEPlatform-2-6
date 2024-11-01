@@ -1,8 +1,5 @@
 package cn.edu.xmu.javaee.productdemoaop.dao.bo;
 
-import cn.edu.xmu.javaee.productdemoaop.mapper.generator.po.OnSalePo;
-import cn.edu.xmu.javaee.productdemoaop.mapper.generator.po.ProductPo;
-import cn.edu.xmu.javaee.productdemoaop.util.CloneFactory;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 商品规格

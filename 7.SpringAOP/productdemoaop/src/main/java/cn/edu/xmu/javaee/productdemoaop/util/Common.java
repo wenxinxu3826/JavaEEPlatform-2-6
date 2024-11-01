@@ -1,8 +1,6 @@
-package cn.edu.xmu.javaee.productdemo.util;
+package cn.edu.xmu.javaee.productdemoaop.util;
 
-import cn.edu.xmu.javaee.core.exception.BusinessException;
 import cn.edu.xmu.javaee.core.model.ReturnNo;
-import cn.edu.xmu.javaee.core.model.ReturnObject;
 import jakarta.servlet.http.HttpServletResponse;
 
 public class Common {

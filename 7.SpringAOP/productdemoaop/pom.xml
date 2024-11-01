@@ -125,7 +125,7 @@
                             <executable>sh</executable>
                             <arguments>
                                 <argument>clear_image.sh</argument>
-                                <argument>xmu-javaee/${project.name}:${project.version}</argument>
+                                <argument>xmu-javaee/productdemoaop:0.0.5</argument>
                             </arguments>
                         </configuration>
                     </execution>

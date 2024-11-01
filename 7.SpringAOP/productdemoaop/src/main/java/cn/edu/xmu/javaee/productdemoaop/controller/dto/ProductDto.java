@@ -4,8 +4,6 @@ package cn.edu.xmu.javaee.productdemoaop.controller.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 /**

@@ -3,12 +3,10 @@ package cn.edu.xmu.javaee.productdemoaop.dao;
 
 import cn.edu.xmu.javaee.core.exception.BusinessException;
 import cn.edu.xmu.javaee.core.model.ReturnNo;
-import cn.edu.xmu.javaee.productdemoaop.dao.OnSaleDao;
 import cn.edu.xmu.javaee.productdemoaop.dao.bo.OnSale;
 import cn.edu.xmu.javaee.productdemoaop.dao.bo.Product;
 import cn.edu.xmu.javaee.productdemoaop.dao.bo.User;
 import cn.edu.xmu.javaee.productdemoaop.mapper.generator.ProductPoMapper;
-import cn.edu.xmu.javaee.productdemoaop.mapper.generator.po.OnSalePo;
 import cn.edu.xmu.javaee.productdemoaop.mapper.generator.po.ProductPo;
 import cn.edu.xmu.javaee.productdemoaop.mapper.generator.po.ProductPoExample;
 import cn.edu.xmu.javaee.productdemoaop.mapper.manual.ProductAllMapper;
@@ -187,5 +185,16 @@ public class ProductDao {
         product = CloneFactory.copy(new Product(), productPoList.get(0));
         logger.debug("findProductByID_manual: product = {}", product);
         return product;
+    }
+
+    public List<Product> findProductByName_join(String name) throws BusinessException {
+        List<Product> productList;
+        ProductPoExample example = new ProductPoExample();
+        ProductPoExample.Criteria criteria = example.createCriteria();
+        criteria.andNameEqualTo(name);
+        List<ProductAllPo> productPoList = productAllMapper.getProductbyName_join(name);
+        productList =  productPoList.stream().map(o->CloneFactory.copy(new Product(), o)).collect(Collectors.toList());
+        logger.debug("findProductByName_join: productList = {}", productList);
+        return productList;
     }
 }
