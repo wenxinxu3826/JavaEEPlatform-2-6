@@ -52,6 +52,12 @@ spring:
     #JSON的时间数据的时区
     time-zone: GMT+8
 
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+
 mybatis:
   #domain对象的包
   type-aliases-package: cn.edu.xmu.javaee.goodsdemo.mapper.po
@@ -61,4 +67,3 @@ mybatis:
   configuration:
     #字段名和对象属性用驼峰映射
     map-underscore-to-camel-case: true
-

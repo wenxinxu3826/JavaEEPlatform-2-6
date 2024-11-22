@@ -65,7 +65,7 @@
     <!-- 日志输出级别 -->
     <logger name="cn.edu.xmu.javaee.productdemoaop" level="DEBUG"/>
     <logger name="cn.edu.xmu.javaee.productdemoaop.mapper" level="INFO"/>
-    <logger name="cn.edu.xmu.javaee.productdemoaop.dao" level="INFO"/>
+    <logger name="cn.edu.xmu.javaee.productdemoaop.dao" level="DEBUG"/>
     <root level="INFO">
         <appender-ref ref="STDOUT" />
         <appender-ref ref="FILE" />

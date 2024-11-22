@@ -7,22 +7,25 @@ import cn.edu.xmu.javaee.productdemoaop.dao.bo.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.Serializable;
 import java.util.List;
 
 @Service
 public class ProductService {
 
-    private Logger logger = LoggerFactory.getLogger(ProductService.class);
+    private static final Logger logger = LoggerFactory.getLogger(ProductService.class);
 
-
-    private ProductDao productDao;
+    private final ProductDao productDao;
+    private final RedisTemplate<String, Serializable> redisTemplate;
 
     @Autowired
-    public ProductService(ProductDao productDao) {
+    public ProductService(ProductDao productDao, RedisTemplate<String, Serializable> redisTemplate) {
         this.productDao = productDao;
+        this.redisTemplate = redisTemplate;
     }
 
     /**
@@ -31,13 +34,32 @@ public class ProductService {
      * @param id 商品id
      * @return 商品对象
      */
-    @Transactional(rollbackFor = {BusinessException.class})
+    @Transactional(rollbackFor = BusinessException.class)
+    public Product retrieveProductByID(Long id, boolean all) throws BusinessException {
+        String cacheKey = "product:" + id;
+        // 尝试从Redis中获取数据
+        Product product = (Product) redisTemplate.opsForValue().get(cacheKey);
+        if(product!=null)logger.debug("success find product in redis");
+        else {
+            logger.debug("not find product in redis");
+            // Redis中没有找到，从数据库查询
+            product = productDao.retrieveProductByID(id, all);
+            if (product != null) {
+                // 数据库查询到数据后，将其存入Redis
+                redisTemplate.opsForValue().set(cacheKey, product);
+            }
+        }
+        logger.debug("findProductById: id = {}, all = {}", id, all);
+        return product;
+    }
+
+   /* @Transactional(rollbackFor = {BusinessException.class})
     public Product retrieveProductByID(Long id, boolean all) throws BusinessException {
         logger.debug("findProductById: id = {}, all = {}", id, all);
         return productDao.retrieveProductByID(id, all);
     }
 
-    /**
+
      * 用商品名称搜索商品
      *
      * @param name 商品名称

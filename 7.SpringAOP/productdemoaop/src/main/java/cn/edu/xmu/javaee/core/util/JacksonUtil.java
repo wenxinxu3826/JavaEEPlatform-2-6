@@ -1,19 +1,4 @@
-/**
- * Copyright School of Informatics Xiamen University
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- **/
-
+//School of Informatics Xiamen University, GPL-3.0 license
 package cn.edu.xmu.javaee.core.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -26,13 +11,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class JacksonUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(JacksonUtil.class);
+
+    private static final Set<String> PRIMITIVE_TYPE = new HashSet<>(){
+        {
+            add(Integer.class.getName());
+            add(Long.class.getName());
+            add(Double.class.getName());
+            add(Float.class.getName());
+            add(Boolean.class.getName());
+        }
+    };
 
     public static String parseString(String body, String field) {
         ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module())
@@ -210,7 +203,13 @@ public class JacksonUtil {
         }
         return null;
     }
+
+    /**
+     * modified by ych
+     * task 2023-dgn1-004
+     */
     public static <T> T toObj(String data, Class<T> clazz){
+        if(data==null)return null;//微信取消支付如果成功返回为空，无法json类型转换，直接返回null否则报错
         ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module())
                 .registerModule(new JavaTimeModule());
         try {
@@ -277,6 +276,56 @@ public class JacksonUtil {
                 return leaf.toString();
             }
         } catch (IOException e) {
+            logger.error(e.getMessage(), e);
+        }
+        return null;
+    }
+
+    public static <T> T parseSubnodeToObject(String body, String field, Class<T> clazz) {
+        ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module())
+                .registerModule(new JavaTimeModule());
+        JsonNode node;
+        try {
+            node = mapper.readTree(body);
+            JsonNode leaf = node.at(field);
+            if (leaf != null) {
+                String value = leaf.toString();
+                if (PRIMITIVE_TYPE.contains(clazz.getName())){
+                    return (T) clazz.getConstructor(String.class).newInstance(value);
+                } else {
+                    return toObj(value, clazz);
+                }
+            }
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+        return null;
+    }
+
+    public static <T>  List<T> parseSubnodeToObjectList(String body, String field, Class<T> clazz) {
+        ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module())
+                .registerModule(new JavaTimeModule());
+        JsonNode node;
+        try {
+            node = mapper.readTree(body);
+            JsonNode leaf = node.at(field);
+            if (leaf != null) {
+                List<JsonNode> retObj =mapper.convertValue(leaf, new TypeReference<List<JsonNode>>() {
+                });
+                List<T> ret = new ArrayList<>(retObj.size());
+                for (JsonNode item:retObj) {
+                    String value = item.toString();
+                    T obj = null;
+                    if (PRIMITIVE_TYPE.contains(clazz.getName())){
+                        obj = clazz.getConstructor(String.class).newInstance(value);
+                    } else {
+                        obj = toObj(value, clazz);
+                    }
+                    ret.add(obj);
+                }
+                return ret;
+            }
+        } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
         return null;

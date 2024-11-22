@@ -15,9 +15,13 @@ import cn.edu.xmu.javaee.productdemoaop.util.CloneFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,11 +41,14 @@ public class ProductDao {
 
     private ProductAllMapper productAllMapper;
 
+    private final RedisTemplate<String, Serializable> redisTemplate;
+
     @Autowired
-    public ProductDao(ProductPoMapper productPoMapper, OnSaleDao onSaleDao, ProductAllMapper productAllMapper) {
+    public ProductDao(ProductPoMapper productPoMapper, OnSaleDao onSaleDao, ProductAllMapper productAllMapper, RedisTemplate<String, Serializable> redisTemplate) {
         this.productPoMapper = productPoMapper;
         this.onSaleDao = onSaleDao;
         this.productAllMapper = productAllMapper;
+        this.redisTemplate=redisTemplate;
     }
 
     /**
@@ -90,7 +97,7 @@ public class ProductDao {
     }
 
 
-    private Product retrieveFullProduct(ProductPo productPo) throws DataAccessException{
+    /*private Product retrieveFullProduct(ProductPo productPo) throws DataAccessException{
         assert productPo != null;
         Product product =  CloneFactory.copy(new Product(), productPo);
         List<OnSale> latestOnSale = onSaleDao.getLatestOnSale(productPo.getId());
@@ -99,6 +106,28 @@ public class ProductDao {
         List<Product> otherProduct = this.retrieveOtherProduct(productPo);
         product.setOtherProduct(otherProduct);
 
+        return product;
+    }*/
+    private Product retrieveFullProduct(ProductPo productPo) throws DataAccessException {
+        assert productPo != null;
+        Product product = CloneFactory.copy(new Product(), productPo);
+        String cacheKey = "onsale:" + productPo.getId();
+        // 尝试从Redis中获取数据
+        List<OnSale> latestOnSale = (List<OnSale>) redisTemplate.opsForValue().get(cacheKey);
+        if (latestOnSale != null) {
+            logger.debug("success find onsale in redis");
+        } else {
+            logger.debug("not found onsale in redis");
+            // Redis中没有找到，从数据库查询
+            latestOnSale = onSaleDao.getLatestOnSale(productPo.getId());
+            if (latestOnSale != null) {
+                // 数据库查询到数据后，将其存入Redis
+                redisTemplate.opsForValue().set(cacheKey, (Serializable) latestOnSale);
+            }
+        }
+        product.setOnSaleList(latestOnSale);
+        List<Product> otherProduct = this.retrieveOtherProduct(productPo);
+        product.setOtherProduct(otherProduct);
         return product;
     }
 
