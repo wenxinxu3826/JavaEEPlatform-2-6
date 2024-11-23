@@ -127,7 +127,7 @@ public class ProductDao {
             latestOnSale = onSaleDao.getLatestOnSale(productPo.getId());
             if (latestOnSale != null) {
                 // 数据库查询到数据后，将其存入Redis
-                redisUtil.set(cacheKey, (Serializable) latestOnSale,-1);
+                redisUtil.set(cacheKey, (Serializable) latestOnSale,1000);
             }
         }
         product.setOnSaleList(latestOnSale);
@@ -166,7 +166,7 @@ public class ProductDao {
             productPoList = productPoMapper.selectByExample(example);
             if (productPoList != null) {
                 // 数据库查询到数据后，将其存入Redis
-                redisUtil.set(cacheKey, (Serializable) productPoList,-1);
+                redisUtil.set(cacheKey, (Serializable) productPoList,1000);
             }
         }
         return productPoList.stream().map(po->CloneFactory.copy(new Product(), po)).collect(Collectors.toList());

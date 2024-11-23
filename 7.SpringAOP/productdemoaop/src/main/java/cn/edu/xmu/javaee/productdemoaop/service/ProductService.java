@@ -51,7 +51,7 @@ public class ProductService {
             product = productDao.retrieveProductByID(id, all);
             if (product != null) {
                 // 数据库查询到数据后，将其存入Redis
-                redisUtil.set(cacheKey, product,-1);
+                redisUtil.set(cacheKey, product,1000);
             }
         }
         logger.debug("findProductById: id = {}, all = {}", id, all);
