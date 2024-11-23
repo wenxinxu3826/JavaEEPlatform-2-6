@@ -55,8 +55,10 @@ spring:
   data:
     redis:
       host: localhost
+      #192.168.4.142
       port: 6379
       database: 0
+      #password: 123456
 
 mybatis:
   #domain对象的包

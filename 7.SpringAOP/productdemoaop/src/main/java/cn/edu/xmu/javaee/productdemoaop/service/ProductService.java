@@ -1,6 +1,7 @@
 package cn.edu.xmu.javaee.productdemoaop.service;
 
 import cn.edu.xmu.javaee.core.exception.BusinessException;
+import cn.edu.xmu.javaee.core.util.RedisUtil;
 import cn.edu.xmu.javaee.productdemoaop.dao.ProductDao;
 import cn.edu.xmu.javaee.productdemoaop.dao.bo.Product;
 import cn.edu.xmu.javaee.productdemoaop.dao.bo.User;
@@ -18,14 +19,15 @@ import java.util.List;
 public class ProductService {
 
     private static final Logger logger = LoggerFactory.getLogger(ProductService.class);
-
-    private final ProductDao productDao;
     private final RedisTemplate<String, Serializable> redisTemplate;
+    private final ProductDao productDao;
+    private final RedisUtil redisUtil;
 
     @Autowired
-    public ProductService(ProductDao productDao, RedisTemplate<String, Serializable> redisTemplate) {
-        this.productDao = productDao;
+    public ProductService(RedisTemplate<String, Serializable> redisTemplate, ProductDao productDao) {
         this.redisTemplate = redisTemplate;
+        this.productDao = productDao;
+        this.redisUtil = new RedisUtil(redisTemplate);
     }
 
     /**
@@ -38,15 +40,18 @@ public class ProductService {
     public Product retrieveProductByID(Long id, boolean all) throws BusinessException {
         String cacheKey = "product:" + id;
         // 尝试从Redis中获取数据
-        Product product = (Product) redisTemplate.opsForValue().get(cacheKey);
-        if(product!=null)logger.debug("success find product in redis");
+        Product product;
+        if(redisUtil.hasKey(cacheKey)) {
+            product = (Product) redisUtil.get(cacheKey);
+            logger.debug("success find product in redis");
+        }
         else {
             logger.debug("not find product in redis");
             // Redis中没有找到，从数据库查询
             product = productDao.retrieveProductByID(id, all);
             if (product != null) {
                 // 数据库查询到数据后，将其存入Redis
-                redisTemplate.opsForValue().set(cacheKey, product);
+                redisUtil.set(cacheKey, product,-1);
             }
         }
         logger.debug("findProductById: id = {}, all = {}", id, all);

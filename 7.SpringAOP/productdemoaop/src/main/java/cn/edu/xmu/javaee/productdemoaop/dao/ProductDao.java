@@ -3,6 +3,7 @@ package cn.edu.xmu.javaee.productdemoaop.dao;
 
 import cn.edu.xmu.javaee.core.exception.BusinessException;
 import cn.edu.xmu.javaee.core.model.ReturnNo;
+import cn.edu.xmu.javaee.core.util.RedisUtil;
 import cn.edu.xmu.javaee.productdemoaop.dao.bo.OnSale;
 import cn.edu.xmu.javaee.productdemoaop.dao.bo.Product;
 import cn.edu.xmu.javaee.productdemoaop.dao.bo.User;
@@ -40,15 +41,17 @@ public class ProductDao {
     private OnSaleDao onSaleDao;
 
     private ProductAllMapper productAllMapper;
-
     private final RedisTemplate<String, Serializable> redisTemplate;
+
+    private final RedisUtil redisUtil;
 
     @Autowired
     public ProductDao(ProductPoMapper productPoMapper, OnSaleDao onSaleDao, ProductAllMapper productAllMapper, RedisTemplate<String, Serializable> redisTemplate) {
         this.productPoMapper = productPoMapper;
         this.onSaleDao = onSaleDao;
         this.productAllMapper = productAllMapper;
-        this.redisTemplate=redisTemplate;
+        this.redisTemplate = redisTemplate;
+        this.redisUtil = new RedisUtil(redisTemplate);
     }
 
     /**
@@ -113,16 +116,18 @@ public class ProductDao {
         Product product = CloneFactory.copy(new Product(), productPo);
         String cacheKey = "onsale:" + productPo.getId();
         // 尝试从Redis中获取数据
-        List<OnSale> latestOnSale = (List<OnSale>) redisTemplate.opsForValue().get(cacheKey);
-        if (latestOnSale != null) {
+        List<OnSale> latestOnSale;
+        if(redisUtil.hasKey(cacheKey)) {
+            latestOnSale=(List<OnSale>)redisUtil.get(cacheKey);
             logger.debug("success find onsale in redis");
-        } else {
+        }
+         else {
             logger.debug("not found onsale in redis");
             // Redis中没有找到，从数据库查询
             latestOnSale = onSaleDao.getLatestOnSale(productPo.getId());
             if (latestOnSale != null) {
                 // 数据库查询到数据后，将其存入Redis
-                redisTemplate.opsForValue().set(cacheKey, (Serializable) latestOnSale);
+                redisUtil.set(cacheKey, (Serializable) latestOnSale,-1);
             }
         }
         product.setOnSaleList(latestOnSale);
@@ -131,7 +136,7 @@ public class ProductDao {
         return product;
     }
 
-    private List<Product> retrieveOtherProduct(ProductPo productPo) throws DataAccessException{
+    /*private List<Product> retrieveOtherProduct(ProductPo productPo) throws DataAccessException{
         assert productPo != null;
 
         ProductPoExample example = new ProductPoExample();
@@ -140,8 +145,32 @@ public class ProductDao {
         criteria.andIdNotEqualTo(productPo.getId());
         List<ProductPo> productPoList = productPoMapper.selectByExample(example);
         return productPoList.stream().map(po->CloneFactory.copy(new Product(), po)).collect(Collectors.toList());
-    }
+    }*/
 
+    private List<Product> retrieveOtherProduct(ProductPo productPo) throws DataAccessException {
+        assert productPo != null;
+        ProductPoExample example = new ProductPoExample();
+        ProductPoExample.Criteria criteria = example.createCriteria();
+        criteria.andGoodsIdEqualTo(productPo.getGoodsId());
+        criteria.andIdNotEqualTo(productPo.getId());
+        String cacheKey = "product:" + productPo.getGoodsId();
+        // 尝试从Redis中获取数据
+        List<ProductPo> productPoList;
+        if(redisUtil.hasKey(cacheKey)){
+            productPoList=(List<ProductPo>) redisUtil.get(cacheKey);
+            logger.debug("success find otherProduct in redis");
+        }
+         else {
+            logger.debug("not found otherProduct in redis");
+            // Redis中没有找到，从数据库查询
+            productPoList = productPoMapper.selectByExample(example);
+            if (productPoList != null) {
+                // 数据库查询到数据后，将其存入Redis
+                redisUtil.set(cacheKey, (Serializable) productPoList,-1);
+            }
+        }
+        return productPoList.stream().map(po->CloneFactory.copy(new Product(), po)).collect(Collectors.toList());
+    }
     /**
      * 创建Goods对象
      * @param product 传入的Goods对象
