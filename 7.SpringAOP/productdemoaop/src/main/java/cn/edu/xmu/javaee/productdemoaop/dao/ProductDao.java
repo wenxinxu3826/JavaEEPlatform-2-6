@@ -153,7 +153,7 @@ public class ProductDao {
         ProductPoExample.Criteria criteria = example.createCriteria();
         criteria.andGoodsIdEqualTo(productPo.getGoodsId());
         criteria.andIdNotEqualTo(productPo.getId());
-        String cacheKey = "product:" + productPo.getGoodsId();
+        String cacheKey = "otherProduct:" + productPo.getGoodsId();
         // 尝试从Redis中获取数据
         List<ProductPo> productPoList;
         if(redisUtil.hasKey(cacheKey)){
