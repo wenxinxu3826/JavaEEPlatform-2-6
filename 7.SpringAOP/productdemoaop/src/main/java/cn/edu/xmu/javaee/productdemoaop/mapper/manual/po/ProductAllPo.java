@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -18,7 +19,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductAllPo {
+public class ProductAllPo implements Serializable {
 
     /**
      * 代理对象
@@ -45,6 +46,8 @@ public class ProductAllPo {
 
     private Long creatorId;
 
+    private Long goodsId;
+
     private String creatorName;
 
     private Long modifierId;
@@ -61,4 +64,7 @@ public class ProductAllPo {
 
     private Byte status;
 
+    public Long getGoodsId() {
+        return goodsId;
+    }
 }

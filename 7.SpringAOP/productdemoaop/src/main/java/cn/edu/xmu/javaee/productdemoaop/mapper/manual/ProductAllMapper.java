@@ -20,6 +20,7 @@ public interface ProductAllMapper {
             @Result(column="id", property="id", jdbcType=JdbcType.BIGINT, id=true),
             @Result(column="sku_sn", property="skuSn", jdbcType=JdbcType.VARCHAR),
             @Result(column="name", property="name", jdbcType=JdbcType.VARCHAR),
+            @Result(column="goods_id", property="name", jdbcType=JdbcType.VARCHAR),
             @Result(column="original_price", property="originalPrice", jdbcType=JdbcType.BIGINT),
             @Result(column="weight", property="weight", jdbcType=JdbcType.BIGINT),
             @Result(column="barcode", property="barcode", jdbcType=JdbcType.VARCHAR),
@@ -88,7 +89,7 @@ public interface ProductAllMapper {
             @Result(column="gmt_create", property="gmtCreate", jdbcType=JdbcType.TIMESTAMP),
             @Result(column="gmt_modified", property="gmtModified", jdbcType=JdbcType.TIMESTAMP)
     })
-    ProductPo selectOtherProduct(Long goodsId);
+    List<ProductPo> selectOtherProduct(Long goodsId);
 
     @Select({
             "select",
@@ -158,6 +159,6 @@ public interface ProductAllMapper {
             @Result(column="gmt_create", property="gmtCreate", jdbcType=JdbcType.TIMESTAMP),
             @Result(column="gmt_modified", property="gmtModified", jdbcType=JdbcType.TIMESTAMP)
     })
-    ProductPo selectOProduct(Long goodsId);
+    List<ProductPo> selectOProduct(Long goodsId);
 
 }

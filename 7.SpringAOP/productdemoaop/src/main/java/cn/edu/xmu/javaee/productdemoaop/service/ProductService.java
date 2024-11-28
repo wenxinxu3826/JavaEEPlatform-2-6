@@ -1,10 +1,15 @@
 package cn.edu.xmu.javaee.productdemoaop.service;
 
 import cn.edu.xmu.javaee.core.exception.BusinessException;
+import cn.edu.xmu.javaee.core.model.ReturnNo;
 import cn.edu.xmu.javaee.core.util.RedisUtil;
 import cn.edu.xmu.javaee.productdemoaop.dao.ProductDao;
 import cn.edu.xmu.javaee.productdemoaop.dao.bo.Product;
 import cn.edu.xmu.javaee.productdemoaop.dao.bo.User;
+import cn.edu.xmu.javaee.productdemoaop.mapper.generator.po.OnSalePo;
+import cn.edu.xmu.javaee.productdemoaop.mapper.generator.po.ProductPoExample;
+import cn.edu.xmu.javaee.productdemoaop.mapper.manual.ProductAllMapper;
+import cn.edu.xmu.javaee.productdemoaop.mapper.manual.po.ProductAllPo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,36 +41,21 @@ public class ProductService {
      * @param id 商品id
      * @return 商品对象
      */
-    @Transactional(rollbackFor = BusinessException.class)
-    public Product retrieveProductByID(Long id, boolean all) throws BusinessException {
-        String cacheKey = "product:" + id;
-        // 尝试从Redis中获取数据
-        Product product;
-        if(redisUtil.hasKey(cacheKey)) {
-            product = (Product) redisUtil.get(cacheKey);
-            logger.debug("success find product in redis");
-        }
-        else {
-            logger.debug("not find product in redis");
-            // Redis中没有找到，从数据库查询
-            product = productDao.retrieveProductByID(id, all);
-            if (product != null) {
-                // 数据库查询到数据后，将其存入Redis
-                redisUtil.set(cacheKey, product,1000);
-            }
-        }
-        logger.debug("findProductById: id = {}, all = {}", id, all);
-        return product;
-    }
 
-   /* @Transactional(rollbackFor = {BusinessException.class})
+   @Transactional(rollbackFor = {BusinessException.class})
     public Product retrieveProductByID(Long id, boolean all) throws BusinessException {
         logger.debug("findProductById: id = {}, all = {}", id, all);
         return productDao.retrieveProductByID(id, all);
     }
 
+    @Transactional(rollbackFor = {BusinessException.class})
+    public Product retrieveProductByIDRedis(Long id, boolean all) throws BusinessException {
+        logger.debug("findProductById: id = {}, all = {}", id, all);
+        return productDao.retrieveProductByIDRedis(id, all);
+    }
 
-     * 用商品名称搜索商品
+
+     /* 用商品名称搜索商品
      *
      * @param name 商品名称
      * @return 商品对象
@@ -108,6 +98,12 @@ public class ProductService {
     public Product findProductById_manual(Long id) throws BusinessException {
         logger.debug("findProductById_manual: id = {}", id);
         return productDao.findProductByID_manual(id);
+    }
+
+    @Transactional
+    public Product findProductById_redis(Long id) throws BusinessException {
+        logger.debug("findProductById_redis: id = {}", id);
+        return productDao.findProductByID_Redis(id);
     }
 
     /**
