@@ -54,7 +54,7 @@ spring:
 
   data:
     redis:
-      host: localhost
+      host: 116.205.122.255
       port: 6379
       database: 0
       password: 123456
