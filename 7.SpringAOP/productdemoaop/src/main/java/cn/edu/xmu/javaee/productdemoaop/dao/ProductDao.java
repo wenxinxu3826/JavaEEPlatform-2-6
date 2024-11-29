@@ -27,6 +27,8 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -48,6 +50,7 @@ public class ProductDao {
     private static final String OTHER_PRODUCT_CACHE_KEY = "otherProduct:%d";
     private static final String ON_SALE_CACHE_KEY = "onSaleList:%d";
     private static final String PRODUCT_CACHE_KEY="onSaleList:%d";
+    private static final int TIMEOUT=3600;
 
     @Autowired
     public ProductDao(ProductPoMapper productPoMapper, OnSaleDao onSaleDao, ProductAllMapper productAllMapper, RedisTemplate<String, Serializable> redisTemplate) {
@@ -124,9 +127,13 @@ public class ProductDao {
         assert productPo != null;
         Product product =  CloneFactory.copy(new Product(), productPo);
         List<OnSale> latestOnSale = onSaleDao.getLatestOnSale(productPo.getId());
+        for (OnSale onSale : latestOnSale) {
+            String okey = onSale.getId().toString();
+            logger.debug("success find an onsale "+okey+" in mysql");
+        }
         product.setOnSaleList(latestOnSale);
-
         List<Product> otherProduct = this.retrieveOtherProduct(productPo);
+
         product.setOtherProduct(otherProduct);
 
         return product;
@@ -134,19 +141,32 @@ public class ProductDao {
     private Product retrieveFullProductRedis(ProductPo productPo) throws DataAccessException {
         assert productPo != null;
         Product product = CloneFactory.copy(new Product(), productPo);
-        String cacheKey = "onsale:" + productPo.getId();
+        String cacheKey = "onsale:" + productPo.getId().toString();
         // 尝试从Redis中获取数据
-        List<OnSale> latestOnSale;
-        if(redisUtil.hasKey(cacheKey)) {
-            latestOnSale=(List<OnSale>)redisUtil.get(cacheKey);
+        List<OnSale> latestOnSale = new ArrayList<>();
+        if (redisUtil.hasKey(cacheKey)) {
             logger.debug("success find onsale in redis");
-        }
-         else {
+            Set<Serializable> set = redisUtil.getSet(cacheKey);
+
+            for (Serializable o : set) {
+                String okey = o.toString();
+                OnSale onSale = (OnSale) redisUtil.get(okey);
+                if (onSale != null) {
+                    latestOnSale.add(onSale);
+                    logger.debug("success find an onsale "+okey+" in redis");
+                }
+            }
+        } else {
             logger.debug("not found onsale in redis");
             // Redis中没有找到，从数据库查询
             latestOnSale = onSaleDao.getLatestOnSale(productPo.getId());
-                // 数据库查询到数据后，将其存入Redis
-            redisUtil.set(cacheKey, (Serializable) latestOnSale,1000);
+            // 数据库查询到数据后，将其存入Redis
+            for (OnSale onSale : latestOnSale) {
+                String okey = onSale.getId().toString();
+                redisUtil.set(okey, onSale, TIMEOUT);
+                redisUtil.addSet(cacheKey, okey);
+            }
+            redisUtil.expire(cacheKey, TIMEOUT, TimeUnit.SECONDS);
         }
         product.setOnSaleList(latestOnSale);
         List<Product> otherProduct = this.retrieveOtherProductRedis(productPo);
@@ -162,6 +182,10 @@ public class ProductDao {
         criteria.andGoodsIdEqualTo(productPo.getGoodsId());
         criteria.andIdNotEqualTo(productPo.getId());
         List<ProductPo> productPoList = productPoMapper.selectByExample(example);
+        for (ProductPo productPo1 : productPoList) {
+            String okey = productPo1.getId().toString();
+            logger.debug("success find an otherProduct "+okey+" in mysql");
+        }
         return productPoList.stream().map(po->CloneFactory.copy(new Product(), po)).collect(Collectors.toList());
     }
 
@@ -173,19 +197,31 @@ public class ProductDao {
         criteria.andIdNotEqualTo(productPo.getId());
         String cacheKey = "otherProduct:" + productPo.getGoodsId();
         // 尝试从Redis中获取数据
-        List<ProductPo> productPoList;
-        if(redisUtil.hasKey(cacheKey)){
-            productPoList=(List<ProductPo>) redisUtil.get(cacheKey);
-            logger.debug("success find otherProduct in redis");
-        }
-         else {
-            logger.debug("not found otherProduct in redis");
+        List<ProductPo> productPoList = new ArrayList<>();
+        if (redisUtil.hasKey(cacheKey)) {
+            logger.debug("success find otherproduct in redis");
+            Set set = redisUtil.getSet(cacheKey);
+
+            for (Object o : set) {
+                String okey=o.toString();
+                ProductPo productPoFromRedis = (ProductPo) redisUtil.get(okey);
+                if (productPoFromRedis != null) {
+                    productPoList.add(productPoFromRedis);
+                    logger.debug("success find an otherProduct "+okey+" in redis");
+                }
+            }
+        } else {
             // Redis中没有找到，从数据库查询
+            logger.debug("not found otherProduct in redis");
             productPoList = productPoMapper.selectByExample(example);
-            // 数据库查询到数据后，将其存入Redis
-            redisUtil.set(cacheKey, (Serializable) productPoList,1000);
+            for (ProductPo productPo1 : productPoList) {
+                String okey = productPo1.getId().toString(); // 构建唯一的缓存键
+                redisUtil.set(okey, productPo1, TIMEOUT);
+                redisUtil.addSet(cacheKey, okey); // 将构建的键添加到集合中
+            }
+            redisUtil.expire(cacheKey, TIMEOUT, TimeUnit.SECONDS);
         }
-        return productPoList.stream().map(po->CloneFactory.copy(new Product(), po)).collect(Collectors.toList());
+        return productPoList.stream().map(po -> CloneFactory.copy(new Product(), po)).collect(Collectors.toList());
     }
     /**
      * 创建Goods对象
