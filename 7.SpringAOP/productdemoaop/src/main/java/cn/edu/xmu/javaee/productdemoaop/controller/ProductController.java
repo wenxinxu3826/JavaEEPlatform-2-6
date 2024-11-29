@@ -43,7 +43,7 @@ public class ProductController {
             product=productService.retrieveProductByIDRedis(id,true);
         }
         else {
-            product = productService.retrieveProductByID(id, true);
+            product = productService.retrieveProductByID(id,true);
         }
         ProductDto productDto = CloneFactory.copy(new ProductDto(), product);
         retObj = new ReturnObject(productDto);

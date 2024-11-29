@@ -27,7 +27,6 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -248,43 +247,60 @@ public class ProductDao {
      * @return  Goods对象列表，带关联的Product返回
      */
 
-    public Product findProductByID_Redis(Long productId) throws BusinessException {
+    /*public Product findProductByID_Redis(Long productId) throws BusinessException {
         ProductPoExample example = new ProductPoExample();
         example.createCriteria().andIdEqualTo(productId);
-        ProductAllPo productPo,productAllPo;
-        String cacheKey = String.format(PRODUCT_CACHE_KEY, productId);
+        String cacheKey="product:"+productId;
+        List<ProductAllPo> productPoList;
+        String onSaleListCacheKey = String.format(ON_SALE_CACHE_KEY, productId);
+        String otherProductCacheKey = String.format(OTHER_PRODUCT_CACHE_KEY, productAllPo.getGoodsId());
         if(redisUtil.hasKey(cacheKey)){
+            productPoList =(List)redisUtil.get(cacheKey);
             logger.debug("success find product in redis");
-            productPo=(ProductAllPo)redisUtil.get(cacheKey);
-            //  从缓存中获取onSaleList，如果未命中则查询数据库并缓存结果
-            List<OnSalePo> onSaleList = getOnSaleList(productId);
-            productPo.setOnSaleList(onSaleList);
-
-            //  从缓存中获取otherProduct，如果未命中则查询数据库并缓存结果
-            List<ProductPo> otherProduct = getOtherProduct(productPo.getGoodsId());
-            productPo.setOtherProduct(otherProduct);
         }
         else {
-            productPo=productAllMapper.getProductWithAll(example).get(0);
-            logger.debug("not find product in redis");
-            productAllPo=productAllMapper.getProductWithAll(example).stream().findFirst().orElse(null);
-            redisUtil.set(cacheKey, productAllPo,1000);
+            productPoList=productAllMapper.getProductWithAll(example);
+
         }
 
-        if (productPo==null) {
+        if (productPoList.isEmpty()) {
             throw new BusinessException(ReturnNo.RESOURCE_ID_NOTEXIST, "产品id不存在");
         }
-        Product product = CloneFactory.copy(new Product(), productPo);
-        logger.debug("findById: product = {}", product);
+        Product product = CloneFactory.copy(new Product(), productPoList.get(0));
+
+        // 2. 查询缓存中的otherProduct和onSaleList
+        ProductAllPo productAllPo = productPoList.get(0);
+        String onSaleListCacheKey = String.format(ON_SALE_CACHE_KEY, productAllPo.getId());
+        String otherProductCacheKey = String.format(OTHER_PRODUCT_CACHE_KEY, productAllPo.getGoodsId());
+
+        // 检查缓存中的onSaleList
+        List<OnSalePo> onSaleList = (List<OnSalePo>) redisUtil.get(onSaleListCacheKey);
+        if (onSaleList == null) {
+            onSaleList = productAllMapper.selectLastOnSaleByProductId(productAllPo.getId());
+            if (onSaleList != null) {
+                redisUtil.set(onSaleListCacheKey, (Serializable) onSaleList, 1000);
+            }
+        }
+        productAllPo.setOnSaleList(onSaleList);
+
+        // 检查缓存中的otherProduct
+        ProductPo otherProduct = (ProductPo) redisUtil.get(otherProductCacheKey);
+        if (otherProduct == null) {
+            otherProduct = productAllMapper.selectOtherProduct(productAllPo.getGoodsId());
+            if (otherProduct != null) {
+                redisUtil.set(otherProductCacheKey, otherProduct, 1000);
+            }
+        }
+        productAllPo.setOtherProduct((List)otherProduct);
+
         return product;
-    }
+    }*/
 
     public Product findProductByID_manual(Long productId) throws BusinessException {
         Product product = null;
         ProductPoExample example = new ProductPoExample();
         ProductPoExample.Criteria criteria = example.createCriteria();
         criteria.andIdEqualTo(productId);
-        ProductAllPo productPo,productAllPo;
         List<ProductAllPo> productPoList = productAllMapper.getProductWithAll(example);
 
         if (productPoList.size() == 0){
@@ -311,12 +327,12 @@ public class ProductDao {
         return onSaleList;
     }
 
-    public List<ProductPo> getOtherProduct(Long goodsId) {
+    public ProductPo getOtherProduct(Long goodsId) {
         String cacheKey = String.format(OTHER_PRODUCT_CACHE_KEY, goodsId);
-        List<ProductPo> otherProduct;
+        ProductPo otherProduct;
         if (redisUtil.hasKey(cacheKey)) {
             logger.debug("success find otherProduct in redis");
-            otherProduct = (List<ProductPo>) redisUtil.get(cacheKey);
+            otherProduct = (ProductPo) redisUtil.get(cacheKey);
         }
         else{
             logger.debug("not find otherProduct in redis");

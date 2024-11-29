@@ -89,7 +89,7 @@ public interface ProductAllMapper {
             @Result(column="gmt_create", property="gmtCreate", jdbcType=JdbcType.TIMESTAMP),
             @Result(column="gmt_modified", property="gmtModified", jdbcType=JdbcType.TIMESTAMP)
     })
-    List<ProductPo> selectOtherProduct(Long goodsId);
+    ProductPo selectOtherProduct(Long goodsId);
 
     @Select({
             "select",

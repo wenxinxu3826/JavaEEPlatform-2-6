@@ -100,11 +100,11 @@ public class ProductService {
         return productDao.findProductByID_manual(id);
     }
 
-    @Transactional
+   /* @Transactional
     public Product findProductById_redis(Long id) throws BusinessException {
         logger.debug("findProductById_redis: id = {}", id);
         return productDao.findProductByID_Redis(id);
-    }
+    }*/
 
     /**
      * 用商品名称搜索商品
